@@ -1,0 +1,97 @@
+apply plugin: "java"
+apply plugin: "groovy"
+apply plugin: "maven"
+apply plugin: "signing"
+
+group = "io.thedocs"
+archivesBaseName = "soyuz-tasks-queue"
+version = "0.0.1"
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.slf4j:slf4j-api:1.6.1"
+    compile "com.google.code.findbugs:jsr305:3.0.0"
+    compile "io.thedocs:soyuz-to:1.0.1"
+    compile "io.thedocs:soyuz-is:1.0"
+    compile "io.thedocs:soyuz-loge:1.2"
+
+    compileOnly "org.projectlombok:lombok:1.18.22"
+    annotationProcessor "org.projectlombok:lombok:1.18.22"
+
+    //test
+    testCompile "junit:junit:4.12"
+    testCompile "org.codehaus.groovy:groovy-all:2.3.6"
+    testCompile "org.spockframework:spock-core:1.0-groovy-2.3"
+    testCompile "com.google.guava:guava:18.0"
+    testCompile "org.projectlombok:lombok:1.16.8"
+}
+
+task sourcesJar(type: Jar) {
+    classifier = "sources"
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = "javadoc"
+    from "build/docs/javadoc"
+}
+
+artifacts {
+    archives jar
+    archives javadocJar
+    archives sourcesJar
+}
+
+signing {
+    sign configurations.archives
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            pom.project {
+                name "soyuz-tasks-queue"
+                packaging "jar"
+                // optionally artifactId can be defined here
+                description "db stored tasks queue"
+                url "https://github.com/thedocs-io/soyuz-tasks-queue"
+
+                scm {
+                    url "scm:git@github.com:thedocs-io/soyuz-tasks-queue.git"
+                    connection "scm:git@github.com:thedocs-io/soyuz-tasks-queue.git"
+                    developerConnection "scm:git@github.com:thedocs-io/soyuz-tasks-queue.git"
+                }
+
+                licenses {
+                    license {
+                        name "The Apache License, Version 2.0"
+                        url "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                    }
+                }
+
+                developers {
+                    developer {
+                        id "fedotxxl"
+                        name "Fedor Belov"
+                    }
+                }
+            }
+        }
+    }
+}

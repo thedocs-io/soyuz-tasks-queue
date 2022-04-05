@@ -3,7 +3,7 @@ package io.thedocs.soyuz.tasksQueue.event;
 
 import io.thedocs.soyuz.tasksQueue.TasksQueueBusEventI;
 import io.thedocs.soyuz.tasksQueue.TasksQueueProcessorI;
-import io.thedocs.soyuz.tasksQueue.domain.Task;
+import io.thedocs.soyuz.tasksQueue.domain.TaskQueue;
 
 import javax.annotation.Nullable;
 
@@ -14,16 +14,16 @@ public class TasksQueueResultEvent implements TasksQueueBusEventI {
 
     @Nullable
     private String queueName;
-    private Task task;
+    private TaskQueue task;
     private Object context;
     private TasksQueueProcessorI.Result result;
     private Throwable e;
 
-    public TasksQueueResultEvent(String queueName, Task task, Object context, TasksQueueProcessorI.Result result) {
+    public TasksQueueResultEvent(String queueName, TaskQueue task, Object context, TasksQueueProcessorI.Result result) {
         this(queueName, task, context, result, null);
     }
 
-    public TasksQueueResultEvent(@Nullable String queueName, Task task, Object context, TasksQueueProcessorI.Result result, @Nullable Throwable e) {
+    public TasksQueueResultEvent(@Nullable String queueName, TaskQueue task, Object context, TasksQueueProcessorI.Result result, @Nullable Throwable e) {
         this.queueName = queueName;
         this.task = task;
         this.result = result;
@@ -61,7 +61,7 @@ public class TasksQueueResultEvent implements TasksQueueBusEventI {
         return result;
     }
 
-    public Task getTask() {
+    public TaskQueue getTask() {
         return task;
     }
 }

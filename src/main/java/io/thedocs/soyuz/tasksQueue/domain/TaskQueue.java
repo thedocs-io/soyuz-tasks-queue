@@ -1,39 +1,37 @@
 package io.thedocs.soyuz.tasksQueue.domain;
 
 import io.thedocs.soyuz.to;
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 import javax.annotation.Nullable;
-import java.util.Date;
+import java.time.ZonedDateTime;
 
 /**
  * Created by fbelov on 09.02.16.
  */
 @EqualsAndHashCode
+@AllArgsConstructor
 @Getter
-public class Task {
+public class TaskQueue {
 
     private int id;
     private int priority;
     private String type;
     private Status status;
-    private Date postedOn;
-    private Date queuedOn;
+    private ZonedDateTime postedAt;
+    private ZonedDateTime queuedAt;
+    private ZonedDateTime statusAt;
+    private ZonedDateTime startedAt;
+    private ZonedDateTime finishedAt;
+    private int iterationsCount;
+    private String server;
     private String context;
-
-    public Task(int id, int priority, String type, Date postedOn, Date queuedOn, Status status, String context) {
-        this.id = id;
-        this.priority = priority;
-        this.type = type;
-        this.postedOn = postedOn;
-        this.queuedOn = queuedOn;
-        this.status = status;
-        this.context = context;
-    }
+    private String result;
 
     public boolean hasBeenQueued() {
-        return queuedOn != null;
+        return queuedAt != null;
     }
 
     public enum Status {

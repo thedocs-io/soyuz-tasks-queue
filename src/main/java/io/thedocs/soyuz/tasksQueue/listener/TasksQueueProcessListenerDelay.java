@@ -1,7 +1,7 @@
 package io.thedocs.soyuz.tasksQueue.listener;
 
 import io.thedocs.soyuz.tasksQueue.TasksQueueProcessorI;
-import io.thedocs.soyuz.tasksQueue.domain.Task;
+import io.thedocs.soyuz.tasksQueue.domain.TaskQueue;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -10,12 +10,12 @@ public class TasksQueueProcessListenerDelay implements TasksQueueProcessListener
     private long delayInMillis;
 
     @Override
-    public void on(Task task, Object context, AtomicReference<TasksQueueProcessorI.Result> result) {
+    public void on(TaskQueue task, Object context, AtomicReference<TasksQueueProcessorI.Result> result) {
         doDelay();
     }
 
     @Override
-    public void onException(Task task, Object context, Throwable e) {
+    public void onException(TaskQueue task, Object context, Throwable e) {
         doDelay();
     }
 

@@ -2,7 +2,7 @@ package io.thedocs.soyuz.tasksQueue.listener;
 
 import io.thedocs.soyuz.log.LoggerEvents;
 import io.thedocs.soyuz.tasksQueue.TasksQueueProcessorI;
-import io.thedocs.soyuz.tasksQueue.domain.Task;
+import io.thedocs.soyuz.tasksQueue.domain.TaskQueue;
 import io.thedocs.soyuz.to;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -23,7 +23,7 @@ public class TasksQueueProcessListenerStopOnTooManyIterations implements TasksQu
     }
 
     @Override
-    public void on(Task task, Object context, AtomicReference<TasksQueueProcessorI.Result> result) {
+    public void on(TaskQueue task, Object context, AtomicReference<TasksQueueProcessorI.Result> result) {
         if (result.get() == TasksQueueProcessorI.Result.FAILURE && maxIterationsCount > 0) {
             int taskIterationsCount = iterationsCountProvider.getIterationsCount(task.getId());
 
@@ -36,7 +36,7 @@ public class TasksQueueProcessListenerStopOnTooManyIterations implements TasksQu
     }
 
     @Override
-    public void onException(Task task, Object context, Throwable e) {
+    public void onException(TaskQueue task, Object context, Throwable e) {
     }
 
     public interface IterationsCountProvider {

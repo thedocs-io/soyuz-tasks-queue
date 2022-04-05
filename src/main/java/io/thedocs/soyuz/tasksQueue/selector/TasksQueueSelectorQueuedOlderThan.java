@@ -1,8 +1,8 @@
 package io.thedocs.soyuz.tasksQueue.selector;
 
-import io.thedocs.soyuz.tasksQueue.domain.Task;
+import io.thedocs.soyuz.tasksQueue.domain.TaskQueue;
 
-import java.util.Date;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 /**
@@ -17,8 +17,8 @@ public class TasksQueueSelectorQueuedOlderThan implements TasksQueueSelectorI {
     }
 
     @Override
-    public Task select(List<Task> tasks) {
-        Date olderThan = new Date(System.currentTimeMillis() - (olderThanInMinutes * 60 * 1000));
+    public TaskQueue select(List<TaskQueue> tasks) {
+        ZonedDateTime olderThan = ZonedDateTime.now().minusMinutes(olderThanInMinutes);
 
         return tasks
                 .stream()
@@ -27,7 +27,7 @@ public class TasksQueueSelectorQueuedOlderThan implements TasksQueueSelectorI {
                 .orElse(null);
     }
 
-    private boolean filter(Task task, Date olderThan) {
-        return !task.hasBeenQueued() || task.getQueuedOn().before(olderThan);
+    private boolean filter(TaskQueue task, ZonedDateTime olderThan) {
+        return !task.hasBeenQueued() || task.getQueuedAt().isBefore(olderThan);
     }
 }

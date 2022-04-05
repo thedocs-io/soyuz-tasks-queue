@@ -2,7 +2,7 @@ package io.thedocs.soyuz.tasksQueue;
 
 import io.thedocs.soyuz.is;
 import io.thedocs.soyuz.log.LoggerEvents;
-import io.thedocs.soyuz.tasksQueue.domain.Task;
+import io.thedocs.soyuz.tasksQueue.domain.TaskQueue;
 import io.thedocs.soyuz.tasksQueue.event.TasksQueueStoppedEvent;
 import io.thedocs.soyuz.tasksQueue.listener.TasksQueueProcessListenerI;
 import io.thedocs.soyuz.tasksQueue.selector.TasksQueueSelectorI;
@@ -29,7 +29,7 @@ public class TasksQueue<T> {
     private static final LoggerEvents loge = LoggerEvents.getInstance(TasksQueue.class);
 
     private TasksQueueConfig config;
-    private TasksQueueStorage tasksStorage;
+    private TasksQueueStorageI tasksStorage;
     private TasksQueueContextCreatorI<T> contextCreator;
     private TasksQueueProcessorI<T> processor;
     private TasksQueueToProcessSorterI tasksToProcessSorter;
@@ -45,7 +45,7 @@ public class TasksQueue<T> {
             TasksQueueProcessorI<T> processor,
             TasksQueueToProcessSorterI tasksToProcessSorter,
             TasksQueueSelectorI selector,
-            TasksQueueStorage tasksStorage,
+            TasksQueueStorageI tasksStorage,
             TasksQueueConfig config,
             TasksQueueTransactionExecutorI transactionExecutor,
             TasksQueueBusI bus,
@@ -136,7 +136,7 @@ public class TasksQueue<T> {
     }
 
     private void acquireAndSchedule() {
-        Task task = null;
+        TaskQueue task = null;
 
         try {
             while (!mustStop) {
@@ -181,17 +181,17 @@ public class TasksQueue<T> {
         }
     }
 
-    private Task acquire() {
+    private TaskQueue acquire() {
         return transactionExecutor.execute(() -> {
-            Task answer = null;
-            List<Task> tasks = tasksToProcessSorter.sort(tasksStorage.findAllToProcess(config.getTaskType()));
+            TaskQueue answer = null;
+            List<TaskQueue> tasks = tasksToProcessSorter.sort(tasksStorage.findAllToProcess(config.getTaskType()));
 
             if (is.t(tasks)) {
                 answer = selector.select(tasks);
             }
 
             if (answer != null) {
-                tasksStorage.markAsQueuedAndSetStatus(answer.getId(), Task.Status.IN_PROGRESS, server);
+                tasksStorage.markAsQueuedAndSetStatus(answer.getId(), TaskQueue.Status.IN_PROGRESS, server);
             }
 
             return answer;
@@ -210,7 +210,7 @@ public class TasksQueue<T> {
         });
     }
 
-    private void scheduleToProcess(Task task) throws InterruptedException {
+    private void scheduleToProcess(TaskQueue task) throws InterruptedException {
         executor.submitTask(Mdc.wrap(to.map("t", task.getId()), () -> {
             TasksQueueProcessorI.Result result = TasksQueueProcessorI.Result.EXCEPTION;
 
@@ -224,7 +224,7 @@ public class TasksQueue<T> {
         }));
     }
 
-    private TasksQueueProcessorI.Result process(Task task) {
+    private TasksQueueProcessorI.Result process(TaskQueue task) {
         listeners.forEach(l -> {
             if (l instanceof TasksQueueProcessListenerI.Start) {
                 ((TasksQueueProcessListenerI.Start) l).onStart(task);
@@ -278,7 +278,7 @@ public class TasksQueue<T> {
         }
     }
 
-    private void release(Task task, TasksQueueProcessorI.Result result) {
+    private void release(TaskQueue task, TasksQueueProcessorI.Result result) {
         if (result == TasksQueueProcessorI.Result.REPEAT_NOW) {
             tasksStorage.markToRepeatNow(task.getId());
         } else {
@@ -286,15 +286,15 @@ public class TasksQueue<T> {
         }
     }
 
-    private Task.Status getStatusForResult(TasksQueueProcessorI.Result result) {
+    private TaskQueue.Status getStatusForResult(TasksQueueProcessorI.Result result) {
         if (result == TasksQueueProcessorI.Result.SUCCESS || result == TasksQueueProcessorI.Result.SKIP) {
-            return Task.Status.SUCCESS;
+            return TaskQueue.Status.SUCCESS;
         } else if (result == TasksQueueProcessorI.Result.FAILURE) {
-            return Task.Status.FAILURE;
+            return TaskQueue.Status.FAILURE;
         } else if (result == TasksQueueProcessorI.Result.REPEAT) {
-            return Task.Status.NEW;
+            return TaskQueue.Status.NEW;
         } else if (result == TasksQueueProcessorI.Result.EXCEPTION) {
-            return Task.Status.EXCEPTION;
+            return TaskQueue.Status.EXCEPTION;
         } else {
             throw new IllegalStateException();
         }

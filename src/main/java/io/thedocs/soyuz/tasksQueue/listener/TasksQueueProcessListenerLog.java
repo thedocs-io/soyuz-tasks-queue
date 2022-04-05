@@ -2,7 +2,7 @@ package io.thedocs.soyuz.tasksQueue.listener;
 
 import io.thedocs.soyuz.log.LoggerEvents;
 import io.thedocs.soyuz.tasksQueue.TasksQueueProcessorI;
-import io.thedocs.soyuz.tasksQueue.domain.Task;
+import io.thedocs.soyuz.tasksQueue.domain.TaskQueue;
 import io.thedocs.soyuz.to;
 
 import java.util.Map;
@@ -16,7 +16,7 @@ public class TasksQueueProcessListenerLog implements TasksQueueProcessListenerI<
     private static final LoggerEvents loge = LoggerEvents.getInstance(TasksQueueProcessListenerLog.class);
 
     @Override
-    public void on(Task task, Object executionContext, AtomicReference<TasksQueueProcessorI.Result> result) {
+    public void on(TaskQueue task, Object executionContext, AtomicReference<TasksQueueProcessorI.Result> result) {
         TasksQueueProcessorI.Result r = result.get();
         Map data = to.map("t", task.getId(), "r", result);
         String event = "tq.done";
@@ -31,7 +31,7 @@ public class TasksQueueProcessListenerLog implements TasksQueueProcessListenerI<
     }
 
     @Override
-    public void onException(Task task, Object executionContext, Throwable e) {
+    public void onException(TaskQueue task, Object executionContext, Throwable e) {
         loge.error("tq.done.exception", to.map("t", task.getId()), e);
     }
 

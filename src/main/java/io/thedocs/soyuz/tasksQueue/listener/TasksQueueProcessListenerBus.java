@@ -2,7 +2,7 @@ package io.thedocs.soyuz.tasksQueue.listener;
 
 import io.thedocs.soyuz.tasksQueue.TasksQueueBusI;
 import io.thedocs.soyuz.tasksQueue.TasksQueueProcessorI;
-import io.thedocs.soyuz.tasksQueue.domain.Task;
+import io.thedocs.soyuz.tasksQueue.domain.TaskQueue;
 import io.thedocs.soyuz.tasksQueue.event.TasksQueueResultEvent;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -25,12 +25,12 @@ public class TasksQueueProcessListenerBus implements TasksQueueProcessListenerI<
     }
 
     @Override
-    public void on(Task task, Object executionContext, AtomicReference<TasksQueueProcessorI.Result> result) {
+    public void on(TaskQueue task, Object executionContext, AtomicReference<TasksQueueProcessorI.Result> result) {
         bus.post(new TasksQueueResultEvent(queueName, task, executionContext, result.get()));
     }
 
     @Override
-    public void onException(Task task, Object executionContext, Throwable e) {
+    public void onException(TaskQueue task, Object executionContext, Throwable e) {
         bus.post(new TasksQueueResultEvent(queueName, task, executionContext, TasksQueueProcessorI.Result.EXCEPTION, e));
     }
 

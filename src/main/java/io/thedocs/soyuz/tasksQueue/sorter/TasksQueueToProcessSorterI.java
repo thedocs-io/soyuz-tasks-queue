@@ -1,6 +1,6 @@
 package io.thedocs.soyuz.tasksQueue.sorter;
 
-import io.thedocs.soyuz.tasksQueue.domain.Task;
+import io.thedocs.soyuz.tasksQueue.domain.TaskQueue;
 
 import java.util.List;
 
@@ -9,6 +9,6 @@ import java.util.List;
  */
 public interface TasksQueueToProcessSorterI {
 
-    List<Task> sort(List<Task> tasks);
+    List<TaskQueue> sort(List<TaskQueue> tasks);
 
 }

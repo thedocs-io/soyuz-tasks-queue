@@ -1,6 +1,6 @@
 package io.thedocs.soyuz.tasksQueue.selector;
 
-import io.thedocs.soyuz.tasksQueue.domain.Task;
+import io.thedocs.soyuz.tasksQueue.domain.TaskQueue;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -11,6 +11,6 @@ import java.util.List;
 public interface TasksQueueSelectorI {
 
     @Nullable
-    Task select(List<Task> tasks);
+    TaskQueue select(List<TaskQueue> tasks);
 
 }

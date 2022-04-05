@@ -1,7 +1,7 @@
 package io.thedocs.soyuz.tasksQueue.listener;
 
 import io.thedocs.soyuz.tasksQueue.TasksQueueProcessorI;
-import io.thedocs.soyuz.tasksQueue.domain.Task;
+import io.thedocs.soyuz.tasksQueue.domain.TaskQueue;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -10,18 +10,18 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public interface TasksQueueProcessListenerI<T> {
 
-    void on(Task task, T executionContext, AtomicReference<TasksQueueProcessorI.Result> result);
-    void onException(Task task, T executionContext, Throwable e);
+    void on(TaskQueue task, T executionContext, AtomicReference<TasksQueueProcessorI.Result> result);
+    void onException(TaskQueue task, T executionContext, Throwable e);
 
     interface Start {
-        void onStart(Task task);
+        void onStart(TaskQueue task);
     }
 
     interface Finally<T> {
-        void onFinally(Task task, T executionContext);
+        void onFinally(TaskQueue task, T executionContext);
     }
 
     interface AfterTransaction<T> {
-        void onAfterTransaction(Task task, T executionContext, AtomicReference<TasksQueueProcessorI.Result> result);
+        void onAfterTransaction(TaskQueue task, T executionContext, AtomicReference<TasksQueueProcessorI.Result> result);
     }
 }

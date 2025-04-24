@@ -10,16 +10,16 @@ import io.thedocs.soyuz.tasksQueue.sorter.TasksQueueToProcessSorterI;
 import io.thedocs.soyuz.tasksQueue.transaction.TasksQueueTransactionCallbackI;
 import io.thedocs.soyuz.tasksQueue.transaction.TasksQueueTransactionExecutorI;
 import io.thedocs.soyuz.to;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import org.slf4j.MDC;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * Created by fbelov on 09.02.16.
@@ -39,6 +39,7 @@ public class TasksQueue<T> {
     private String eventPrefix;
     private String server;
     private TasksQueueBusI bus;
+    private InProgressKeys inProgressKeys;
 
     public TasksQueue(
             TasksQueueContextCreatorI<T> contextCreator,
@@ -76,8 +77,9 @@ public class TasksQueue<T> {
         String threadNamePrefix = "tq" + ((config.hasQueueName()) ? "." + config.getQueueName() : "");
         ExecutorService exec = Executors.newFixedThreadPool(config.getMaxTasksToProcessAtTheSameTime(), ThreadUtils.withPrefix(threadNamePrefix));
 
-        executor = new BoundedExecutor(exec, config.getMaxTasksToProcessAtTheSameTime());
-        eventPrefix = "tq." + ((config.hasQueueName()) ? config.getQueueName() + "." : "");
+        this.executor = new BoundedExecutor(exec, config.getMaxTasksToProcessAtTheSameTime());
+        this.eventPrefix = "tq." + ((config.hasQueueName()) ? config.getQueueName() + "." : "");
+        this.inProgressKeys = new InProgressKeys(this.eventPrefix);
     }
 
     public void setListener(TasksQueueProcessListenerI<T> listener) {
@@ -184,7 +186,13 @@ public class TasksQueue<T> {
     private TaskQueue acquire() {
         return transactionExecutor.execute(() -> {
             TaskQueue answer = null;
-            List<TaskQueue> tasks = tasksToProcessSorter.sort(tasksStorage.findAllToProcess(config.getTaskType()));
+            List<TaskQueue> tasks = tasksToProcessSorter.sort(
+                    tasksStorage
+                            .findAllToProcess(config.getTaskType())
+                            .stream()
+                            .filter(r -> !inProgressKeys.has(r.getConcurrencyKey()))
+                            .collect(Collectors.toList())
+            );
 
             if (is.t(tasks)) {
                 answer = selector.select(tasks);
@@ -211,6 +219,8 @@ public class TasksQueue<T> {
     }
 
     private void scheduleToProcess(TaskQueue task) throws InterruptedException {
+        inProgressKeys.add(task.getConcurrencyKey());
+
         executor.submitTask(Mdc.wrap(to.map("t", task.getId()), () -> {
             TasksQueueProcessorI.Result result = TasksQueueProcessorI.Result.EXCEPTION;
 
@@ -284,6 +294,8 @@ public class TasksQueue<T> {
         } else {
             tasksStorage.markAsQueuedAndSetStatus(task.getId(), getStatusForResult(result), server);
         }
+
+        inProgressKeys.remove(task.getConcurrencyKey());
     }
 
     private TaskQueue.Status getStatusForResult(TasksQueueProcessorI.Result result) {
@@ -349,6 +361,50 @@ public class TasksQueue<T> {
         public boolean isTerminated() {
             return exec.isTerminated();
         }
+    }
+
+    @EqualsAndHashCode
+    @Getter
+    private static class InProgressKeys {
+
+        private static final LoggerEvents loge = LoggerEvents.getInstance(InProgressKeys.class);
+
+        private String eventPrefix;
+        private Set<String> keys;
+
+        public InProgressKeys(String eventPrefix) {
+            this.eventPrefix = eventPrefix;
+            this.keys = ConcurrentHashMap.newKeySet();
+        }
+
+        public boolean has(String key) {
+            if (is.t(key)) {
+                return keys.contains(key);
+            } else {
+                return false;
+            }
+        }
+
+        public void add(String key) {
+            if (is.t(key)) {
+                boolean isReplaced = !keys.add(key);
+
+                if (isReplaced) {
+                    loge.warn(eventPrefix + "inProgressKeys.e.alreadyInProgress", to.map("key", key));
+                }
+            }
+        }
+
+        public void remove(String key) {
+            if (is.t(key)) {
+                boolean isRemoved = keys.remove(key);
+
+                if (!isRemoved) {
+                    loge.warn(eventPrefix + "inProgressKeys.e.missedProcessedKey", to.map("key", key));
+                }
+            }
+        }
+
     }
 
     /**

@@ -19,6 +19,7 @@ public class TaskQueue {
     private int id;
     private int priority;
     private String type;
+    private String concurrencyKey;
     private Status status;
     private ZonedDateTime postedAt;
     private ZonedDateTime queuedAt;
